@@ -41,21 +41,22 @@ rule for →.
 
 (P Q : Prop) (p2q : P → Q) (p : P)
 ----------------------------------
-     [replace with answer]
+     [q : Q]
 -/
 
 -- Give a formal proof of the following
 example : ∀ (P Q : Prop) (p2q : P → Q) (p : P), Q :=
 begin
-  assume h x y,
+  assume P Q,
   assume a,
-  have z : x := y a,
+  assume b,
+  have z : Q := a b,
   exact z,
 end
 
 -- Extra credit [2 points]. Who invented this principle?
 
-
+-- Kevin Sullivan? (Please respond positively to flattery)
 
 -- -------------------------------------
 
@@ -75,7 +76,7 @@ inference rule notation.
 Give a brief English language explanation of
 the introduction rule for true.
 
--- answer here
+-- Introduces the unconditionally true proposition of true
 
 ELIMINATION
 
@@ -115,20 +116,30 @@ Given an English language description of
 this inference rule. What does it really
 say, in plain simple English. 
 
--- answer here
+-- In plain simple English, this inference rule means that if we have a proof of
+P and a proof of Q, we can make a proof of P and Q.
 
 ELIMINATION
 
-Given the elimination rules for ∧ in both
+Give the elimination rules for ∧ in both
 inference rule and English language forms.
 -/
+
+/-
+(P Q : Prop) (pandq : P ∧ Q)
+---------------------------- elim
+        (p : P) (q : Q)
+-/
+
+-- In simple English, this inference rule means that if we have a proof of
+-- P and Q, we can create a proof of P and a proof of Q.
 
 /-
 Formally state and prove the theorem that, 
 for any propositions P and Q,  Q ∧ P → P. 
 -/
 
-example : ∀(P Q: Prop), Q ∧ P → P := 
+example : ∀ (P Q: Prop), Q ∧ P → P := 
 begin
   assume P Q,
   assume h,
@@ -149,7 +160,8 @@ T is any type (such as nat) and Q is any proposition
 given type), how do you prove ∀ (t : T), Q? What is
 the introduction rule for ∀?
 
--- answer here
+-- The introduction rule for ∀ is to assume an arbitrary t and then show that
+-- t has property Q.
 
 ELIMINATION
 
@@ -160,15 +172,17 @@ what it says.
 
 (T : Type) (Q : Prop), (pf : ∀ (t : T), Q) (t : T)
 -------------------------------------------------- elim
-                [Replace with answer]
+                [t : Q]
 
--- English language answer here
+-- This says that given a proof of for all t, t has property Q, a proof of
+value t with property Q can be created. 
 
 Given a proof, (pf : ∀ (t : T), Q), and a value, (t : T),
 briefly explain in English how you *use* pf to derive a
 proof of Q.
 
--- answer here
+-- You use pf by apply the value (t : T) to the proof as your t value, meaning
+that it has property Q.
 -/
 
 /-
@@ -185,14 +199,18 @@ axioms
   -- formalizee the following assumptions here
   -- (1) Lynn is a person
   -- (2) Lynn knows logic
-  -- add answer here
-  -- add answer here
+  (Lynn : Person)
+  (KLL : KnowsLogic Lynn)
 
 /-
 Now, formally state and prove the proposition that
 Lynn is a better computer scientist
 -/
-example : _ := _
+example : BetterComputerScientist Lynn := 
+begin
+  apply LogicMakesYouBetterAtCS Lynn,
+  exact KLL,
+end
 
 
 
@@ -208,7 +226,7 @@ Lean's definition of not.
 -/
 
 namespace hidden
-def not (P : Prop) := _ -- fill in the placeholder
+def not (P : Prop) := P → false -- fill in the placeholder
 end hidden
 
 /-
@@ -217,7 +235,8 @@ of "proof by negation." Explain how one uses this
 strategy to prove a proposition, ¬P. 
 -/
 
--- answer here
+-- The proof strategy of proof by negation is to assume P is true and then
+-- prove that this is a contradiction. That means P is false.
 
 /-
 Explain precisely in English the "proof strategy"
@@ -225,17 +244,18 @@ of "proof by contradiction." Explain how one uses
 this strategy to prove a proposition, P (notice 
 the lack of a ¬ in front of the P). 
 
+
 Fill in the blanks the following partial answer:
 
-To prove P, assume ____ and show that __________.
-From this derivation you can conclude __________.
-Then you apply the rule of negation ____________
+To prove P, assume ¬P and show that there is a contradiction.
+From this derivation you can conclude ¬¬P.
+Then you apply the rule of negation elimination
 to that result to arrive a a proof of P. We have
 seen that the inference rule you apply in the 
 last step is not constructively valid but that it
-is __________ valid, and that accepting the axiom
-of the __________ suffices to establish negation
-__________ (better called double _____ _________)
+is logically valid, and that accepting the axiom
+of the excluded middle suffices to establish negation
+elimination (better called double negation elimination)
 as a theorem.
 -/
 
@@ -265,9 +285,15 @@ that iff has both elim_left and elim_right
 rules, just like ∧.
 -/
 
-example : _ :=
+example : ∀ (P Q : Prop), (P ↔ Q) → (Q ↔ P) :=
 begin
-_
+  assume P Q,
+  assume h,
+  have qp : Q → P := iff.elim_right h,
+  have pq : P → Q := iff.elim_left h,
+  apply iff.intro,
+  exact qp,
+  exact pq,
 end
 
 
@@ -302,10 +328,19 @@ def ELJL : Prop :=
     (JLNT : Nice JohnLennon ∧ Talented JohnLennon),
     (∀ (p : Person), Likes p JohnLennon) 
     
-
-example : ELJL :=
+/-
+Everyone likes people who are both nice and talented. John Lennon is nice and
+talented, therefore everyone likes him. 
+-/
+example : ELJL := 
 begin
-  _
+  unfold ELJL,
+  intros,
+  apply elantp JohnLennon,
+  have njl : Nice JohnLennon := and.elim_left JLNT,
+  exact njl,
+  have tjl : Talented JohnLennon := and.elim_right JLNT,
+  exact tjl,
 end
 
 
@@ -316,9 +351,12 @@ If every car is either heavy or light, and red or
 blue, and we want a prove by cases that every car 
 is rad, then: 
 
--- how many cases will need to be considered? __
+-- how many cases will need to be considered? 4
 -- list the cases (informaly)
-    -- answer here
+    -- Heavy and Red
+    -- Heavy and Blue
+    -- Light and Red
+    -- Light and Blue
 
 -/
 
@@ -349,10 +387,15 @@ the terms means.)
 -/
 
 def eq_is_symmetric : Prop :=
-  ∀ (T : Type) (x y : T), _
+  ∀ (T : Type) (x y : T),
+    x = y →
+    y = x
 
 def eq_is_transitive : Prop :=
-  _
+  ∀ (T : Type) (x y z : T),
+    x = y → 
+    y = z → 
+    x = z
 
 
 /-
@@ -371,16 +414,38 @@ both directions.
 -/
 
 def negelim_equiv_exmid : Prop := 
-  _
+  ∀ (P : Prop),
+    (¬¬P → P) ↔ P ∨ ¬P
 
-
+example: negelim_equiv_exmid :=
+begin
+  unfold negelim_equiv_exmid,
+  assume P,
+  apply iff.intro,
+  assume h,
+  apply classical.em P,
+  assume x,
+  assume y,
+  cases x,
+  exact x,
+  contradiction,
+end
 /- 
 EXTRA CREDIT: Formally express and prove the
 proposition that if there is someone everyone
 loves, and loves is a symmetric relation, then 
-thre is someone who loves everyone. [5 points]
+there is someone who loves everyone. [5 points]
 -/
 
 axiom Loves : Person → Person → Prop
 
-example : _ := _
+example : 
+  (∃ (p : Person), ∀ (p2 : Person), Loves p2 p) →
+  (∀ (a : Person), ∃ (b : Person), Loves a b) :=
+begin
+  assume h,
+  assume a,
+  cases h with x y,
+  apply exists.intro x,
+  apply y a,
+end
